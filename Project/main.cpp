@@ -3,6 +3,7 @@
 #include <SFML/Network.hpp>
 #include <SFML/System.hpp>
 #include <bits/stdc++.h>
+#include <chrono>
 
 #include "Collision.hpp"
 
@@ -26,7 +27,7 @@ typedef struct
     float force;
 } Rocket;
 
-
+std::chrono::time_point<std::chrono::system_clock> start, end;
 
 RenderWindow app(VideoMode(1900,900), "Project");
 Font font;
@@ -152,12 +153,16 @@ void update()
         }
     }
 
+    end = std::chrono::system_clock::now();
+     std::chrono::duration<double> elapsed_seconds = end - start;
+    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+
     //Update displayed information..
     angle_txt.setString("Angle: " + std::to_string((int)rocket.angle));
     vx_speed_txt.setString("Horizontal Speed : " + std::to_string(rocket.vx));
     vy_speed_txt.setString("Vertical Speed: " + std::to_string(rocket.vy));
     altitude_txt.setString("Altitude: " + std::to_string(app.getSize().y - rocket.y - rocket_obj.getGlobalBounds().height / 2 - ground.getGlobalBounds().height));
-    //time_txt.setString("Time: " + to_string();
+    time_txt.setString("Time: " + std::to_string((int)elapsed_seconds.count()));
     fuel_txt.setString("Fuel: " + std::to_string((int)fuel) + "%");
 
     // Collision Detection..
@@ -175,6 +180,8 @@ void update()
 
 void init()
 {
+    start = std::chrono::system_clock::now();
+
     bool loadState = true;
     if (!intro.openFromFile("sounds/start.wav")) app.close(), loadState = false;
     if (!boom_buf.loadFromFile("sounds/boom.wav")) app.close(), loadState = false;
@@ -368,8 +375,8 @@ int main()
         }
 
         update();
-        /*Thread th(&network);
-        th.launch();*/
+        Thread th(&network);
+        th.launch();
 
         app.clear();
 
@@ -380,7 +387,7 @@ int main()
         app.draw(rock);
 
         app.draw(fuel_txt);
-        //app.draw(time_txt);
+        app.draw(time_txt);
         app.draw(altitude_txt);
         app.draw(vx_speed_txt);
         app.draw(vy_speed_txt);
