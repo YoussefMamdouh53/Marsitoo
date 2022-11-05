@@ -9,7 +9,6 @@
 
 #define ROCKET_SCALE 0.1f
 #define PI 3.14f
-#define PORT 8080
 
 #define START 0
 #define MAIN 1
@@ -45,12 +44,12 @@ bool startOn = false;
 bool engineOn = false;
 
 IpAddress ip = IpAddress::getLocalAddress();
-TcpSocket socket;
+UdpSocket socket;
 
 float flameScale = 0.1;
 float g = 0.2;
 float fuel = 100;
-
+long time_frame = 0;
 
 int gameView = START;
 
@@ -137,7 +136,7 @@ void update()
 
     if (rocket_obj.getGlobalBounds().intersects(ground.getGlobalBounds()))
     {
-        if (rocket.vy > 2.5)
+        if (rocket.vy > 2.5 || rocket.angle > 5 || rocket.angle < -5)
         {
             std::cout << "Gameover" << std::endl;
             gameView = GAME_OVER;
@@ -272,10 +271,19 @@ void init()
 
 void network()
 {
-    if (socket.connect("10.171.224.130", 53000) != Socket::Done){
-        std::cout << "error" <<std::endl;
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+    if ((int)elapsed_seconds.count() == time_frame){
         return;
     }
+    time_frame = (int)elapsed_seconds.count();
+
+    /*if (socket.connect("10.171.224.130", 53000) != Socket::Done){
+        std::cout << "error" <<std::endl;
+        return;
+    }*/
+
     std::string angle, vx, vy, f, alt;
     angle = "Angle: " + std::to_string((int)rocket.angle);
     vx = "Horizontal Speed : " + std::to_string(rocket.vx);
@@ -283,7 +291,7 @@ void network()
     alt = "Altitude: " + std::to_string(app.getSize().y - rocket.y - rocket_obj.getGlobalBounds().height / 2 - ground.getGlobalBounds().height);
     f = "Fuel: " + std::to_string((int)fuel) + "%";
     std::string send = angle + "," + vx + "," + vy + ","   + alt  + ","  + f;
-    socket.send(send.c_str(), send.size() * sizeof(char));
+    socket.send(send.c_str(), send.size() * sizeof(char), "10.171.224.130", 53000);
 /*
     socket.send(angle.c_str(), sizeof(angle));
     socket.send(vx.c_str(), sizeof(vx));
